@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ruota della Fortuna – Premi Gadget</title>
+<style>
+  :root{
+    --card-bg: rgba(255,255,255,0.10);
+    --card-border: rgba(255,255,255,0.28);
+    --text-light: #ffffff;
+    --accent-gold: #FFD93D;
+    --shadow-deep: 0 20px 50px rgba(0,0,0,0.45);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html,body{
+    margin:0; padding:0; min-height:100%;
+  }
+
+  body{
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding: 32px 16px 48px;
+    color: var(--text-light);
+    background: radial-gradient(circle at 20% 15%, #4c1d95 0%, transparent 45%),
+                radial-gradient(circle at 85% 10%, #db2777 0%, transparent 40%),
+                linear-gradient(150deg, #1e1b4b 0%, #4c1d95 45%, #7c1d8c 75%, #db2777 100%);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    transition: background-image .4s ease;
+    overflow-x:hidden;
+  }
+
+  body.custom-bg{
+    background-image: var(--custom-bg-url);
+  }
+
+  .app-shell{
+    width:100%;
+    max-width: 620px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 28px;
+    padding: 28px 20px 32px;
+    box-shadow: var(--shadow-deep);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    position:relative;
+  }
+
+  h1{
+    font-size: clamp(22px, 5vw, 32px);
+    margin: 4px 0 2px;
+    text-align:center;
+    letter-spacing: .5px;
+    text-shadow: 0 3px 12px rgba(0,0,0,.4);
+  }
+  .subtitle{
+    margin: 0 0 22px;
+    opacity: .85;
+    font-size: 14px;
+    text-align:center;
+  }
+
+  /* ---------- Wheel ---------- */
+  .wheel-outer{
+    position: relative;
+    width: min(78vw, 380px);
+    aspect-ratio: 1 / 1;
+    margin: 6px auto 22px;
+  }
+
+  .bulbs{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+  }
+  .bulb{
+    position:absolute;
+    width:10px; height:10px;
+    border-radius:50%;
+    background: var(--accent-gold);
+    box-shadow: 0 0 8px 2px rgba(255,217,61,.85);
+    transform: translate(-50%,-50%);
+    animation: twinkle 1.4s ease-in-out infinite;
+  }
+  @keyframes twinkle{
+    0%,100%{ opacity:.35; transform: translate(-50%,-50%) scale(.85);}
+    50%{ opacity:1; transform: translate(-50%,-50%) scale(1.15);}
+  }
+
+  .pointer{
+    position:absolute;
+    top: 6px;
+    left:50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.5));
+    line-height:0;
+  }
+  .pointer svg{ display:block; }
+  .pointer-knob{
+    position:absolute;
+    top:-9px; left:50%;
+    transform: translateX(-50%);
+    width:16px; height:16px;
+    border-radius:50%;
+    background: var(--accent-gold);
+    box-shadow: 0 0 10px 3px rgba(255,217,61,.8);
+    z-index:1;
+  }
+
+  .wheel-rotor{
+    position:absolute;
+    inset: 8%;
+    border-radius:50%;
+    will-change: transform;
+    transform-origin: 50% 50%;
+    filter: drop-shadow(0 10px 25px rgba(0,0,0,.55));
+  }
+  .wheel-rotor canvas{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+  }
+
+  .hub{
+    position:absolute;
+    top:50%; left:50%;
+    transform: translate(-50%,-50%);
+    width: 17%;
+    aspect-ratio:1/1;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #ffffff, #e2c94f 55%, #b98c1f 100%);
+    border: 3px solid rgba(255,255,255,.9);
+    box-shadow: 0 6px 14px rgba(0,0,0,.5), inset 0 0 8px rgba(255,255,255,.6);
+    display:flex; align-items:center; justify-content:center;
+    font-size: clamp(16px,3vw,22px);
+    z-index: 4;
+    overflow:hidden;
+  }
+  .hub img{
+    width:100%; height:100%;
+    object-fit: cover;
+    border-radius:50%;
+  }
+
+  .rim{
+    position:absolute; inset: 6.5%;
+    border-radius:50%;
+    box-shadow: 0 0 0 6px rgba(255,255,255,.85), 0 0 0 10px rgba(0,0,0,.25);
+    pointer-events:none;
+    z-index:3;
+  }
+
+  /* ---------- Controls ---------- */
+  .spin-btn{
+    appearance:none;
+    border:none;
+    cursor:pointer;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing:.5px;
+    color:#3b1d00;
+    padding: 16px 38px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #FFD93D, #FF9F1C);
+    box-shadow: 0 10px 25px rgba(255,159,28,.45), inset 0 -3px 0 rgba(0,0,0,.15);
+    transition: transform .15s ease, box-shadow .15s ease, opacity .2s ease;
+  }
+  .spin-btn:hover:not(:disabled){ transform: translateY(-2px) scale(1.02); box-shadow: 0 14px 30px rgba(255,159,28,.55), inset 0 -3px 0 rgba(0,0,0,.15); }
+  .spin-btn:active:not(:disabled){ transform: translateY(0) scale(.98); }
+  .spin-btn:disabled{ opacity:.6; cursor:not-allowed; }
+  .spin-btn.hidden{ display:none; }
+
+  /* ---------- Settings gear + modal ---------- */
+  .icon-btn{
+    position:absolute;
+    top:16px; right:16px;
+    width:40px; height:40px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.35);
+    background: rgba(255,255,255,.12);
+    color:#fff;
+    font-size:18px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: background .2s ease, transform .3s ease;
+  }
+  .icon-btn:hover{ background: rgba(255,255,255,.25); transform: rotate(35deg); }
+
+  .modal{
+    position:fixed; inset:0;
+    background: rgba(10,6,25,.72);
+    backdrop-filter: blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 200;
+    padding: 20px;
+  }
+  .modal.hidden{ display:none; }
+  .modal-card{
+    width:100%; max-width: 460px;
+    background: #201235;
+    border:1px solid rgba(255,255,255,.15);
+    border-radius: 20px;
+    padding: 22px 22px 24px;
+    max-height: 86vh;
+    overflow-y:auto;
+    box-shadow: var(--shadow-deep);
+    position:relative;
+  }
+  .modal-card h2{ margin:0 0 4px; font-size:19px; }
+  .modal-card p.hint{ font-size: 12.5px; opacity:.75; margin: 2px 0 14px; line-height:1.5; }
+  .field-group{ margin-bottom: 16px; }
+  .field-group label{ display:block; font-size:13px; margin-bottom:6px; opacity:.9; }
+  .field-group input[type=text],
+  .field-group input[type=url],
+  .field-group input[type=password]{
+    width:100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.25);
+    background: rgba(255,255,255,.08);
+    color:#fff;
+    font-size:13px;
+  }
+  .field-group input::placeholder{ color: rgba(255,255,255,.45); }
+  .btn-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .btn-sm{
+    appearance:none; border:none; cursor:pointer;
+    padding: 9px 14px; border-radius: 10px;
+    font-size:12.5px; font-weight:600;
+    background: rgba(255,255,255,.16);
+    color:#fff;
+    transition: background .2s ease;
+  }
+  .btn-sm:hover{ background: rgba(255,255,255,.28); }
+  .btn-sm.primary{ background: linear-gradient(135deg, #FFD93D, #FF9F1C); color:#3b1d00; }
+  .status-line{
+    margin-top:10px; font-size:12px; line-height:1.5; min-height: 18px;
+  }
+  .status-line.ok{ color:#7CF29B; }
+  .status-line.error{ color:#FF9B9B; }
+  .status-line.warn{ color:#FFD93D; }
+  .status-line.info{ color:#cfd3ff; }
+  .modal-close{
+    position:absolute; top:14px; right:16px;
+    background:none; border:none; color:#fff; font-size:20px; cursor:pointer; opacity:.75;
+  }
+  hr.sep{ border:none; border-top:1px solid rgba(255,255,255,.15); margin: 18px 0; }
+
+  .hidden{ display:none !important; }
+
+  /* ---------- Blocco password ---------- */
+  .lock-box{
+    text-align:center;
+    padding: 10px 4px 4px;
+  }
+  .lock-box input[type=password]{
+    text-align:center;
+    letter-spacing: 4px;
+    font-size:16px;
+    margin-top:6px;
+  }
+  .lock-box .btn-row{ justify-content:center; }
+  @keyframes shake{
+    10%,90%{ transform: translateX(-1px); }
+    20%,80%{ transform: translateX(2px); }
+    30%,50%,70%{ transform: translateX(-5px); }
+    40%,60%{ transform: translateX(5px); }
+  }
+  .lock-box.shake{ animation: shake .45s; }
+
+  /* ---------- Editor spicchi ---------- */
+  .seg-list{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    max-height: 280px;
+    overflow-y:auto;
+    padding-right:4px;
+    margin-bottom:4px;
+  }
+  .seg-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:5px;
+    background: rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius: 10px;
+    padding: 6px 7px;
+  }
+  .seg-image{
+    flex-basis:100%;
+    padding:5px 8px;
+    margin-top:2px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.07);
+    color:#fff;
+    font-size:11.5px;
+  }
+  .seg-image::placeholder{ color: rgba(255,255,255,.4); }
+  .seg-order{ display:flex; flex-direction:column; gap:2px; }
+  .seg-btn{
+    appearance:none; border:none; cursor:pointer;
+    background: rgba(255,255,255,.14);
+    color:#fff;
+    border-radius:6px;
+    width:22px; height:20px;
+    font-size:10px;
+    line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .seg-btn:hover{ background: rgba(255,255,255,.28); }
+  .seg-btn.danger{ width:26px; height:26px; font-size:13px; background: rgba(255,107,107,.25); }
+  .seg-btn.danger:hover{ background: rgba(255,107,107,.45); }
+  .seg-color{
+    width:26px; height:26px;
+    border:none; border-radius:6px;
+    padding:0; background:none;
+    cursor:pointer;
+  }
+  .seg-icon{
+    width:38px;
+    text-align:center;
+    padding:5px 2px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.07);
+    color:#fff;
+    font-size:15px;
+  }
+  .seg-label{
+    flex:1;
+    min-width:64px;
+    padding:6px 8px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.07);
+    color:#fff;
+    font-size:12.5px;
+  }
+  .seg-prob{
+    width:48px;
+    padding:6px 4px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.07);
+    color:#fff;
+    font-size:12.5px;
+    text-align:center;
+  }
+  .seg-pct{
+    width:32px;
+    font-size:11px;
+    opacity:.75;
+    text-align:right;
+  }
+
+  /* ---------- Win overlay ---------- */
+  .win-overlay{
+    position:fixed; inset:0;
+    background: rgba(5,2,15,.72);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 300;
+    opacity:0;
+    transition: opacity .35s ease;
+    padding: 20px;
+  }
+  .win-overlay.hidden{ display:none; }
+  .win-overlay.show{ opacity:1; }
+  .win-card{
+    background: linear-gradient(160deg, #2c1654, #7c1d8c 70%, #db2777);
+    border: 2px solid rgba(255,255,255,.4);
+    border-radius: 28px;
+    padding: 40px 32px;
+    text-align:center;
+    max-width: 360px;
+    box-shadow: 0 25px 60px rgba(0,0,0,.6);
+    transform: scale(.4) rotate(-6deg);
+    transition: transform .55s cubic-bezier(.17,.89,.32,1.49);
+  }
+  .win-overlay.show .win-card{ transform: scale(1) rotate(0deg); }
+  .win-icon{ font-size: 76px; line-height:1; margin-bottom: 10px; filter: drop-shadow(0 8px 14px rgba(0,0,0,.4)); }
+  .win-title{ font-size: 26px; font-weight:800; letter-spacing:1px; margin-bottom:6px; color: var(--accent-gold); text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+  .win-prize{ font-size: 21px; font-weight:700; margin-bottom:10px; }
+  .win-sub{ font-size: 13px; opacity:.85; }
+
+  #confettiCanvas{
+    position: fixed; inset:0;
+    pointer-events:none;
+    z-index: 250;
+    display:none;
+  }
+
+  footer{
+    margin-top: 22px;
+    font-size: 11px;
+    opacity:.6;
+    text-align:center;
+  }
+
+  @media (max-width: 420px){
+    .app-shell{ padding: 24px 14px 28px; }
+  }
+</style>
+</head>
+<body>
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="app-shell">
+    <button class="icon-btn" id="settingsBtn" title="Impostazioni">⚙️</button>
+
+    <h1 id="titleText">🎡 Ruota della Fortuna</h1>
+    <p class="subtitle" id="subtitleText">Gira la ruota e vinci subito il tuo gadget!</p>
+
+    <div class="wheel-outer" id="wheelOuter">
+      <div class="bulbs" id="bulbs"></div>
+      <div class="pointer">
+        <div class="pointer-knob"></div>
+        <svg width="34" height="28" viewBox="0 0 34 28">
+          <polygon points="17,27 2,2 32,2" fill="#E53935" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="rim"></div>
+      <div class="wheel-rotor" id="wheelRotor">
+        <canvas id="wheelCanvas" width="500" height="500"></canvas>
+      </div>
+      <div class="hub" id="hub">
+        <span id="hubEmoji">🎁</span>
+        <img id="hubLogo" alt="Logo" style="display:none;">
+      </div>
+    </div>
+
+    <button class="spin-btn" id="spinBtn">🎡 GIRA LA RUOTA</button>
+
+    <footer>Ogni giro è un premio garantito 🎉</footer>
+  </div>
+
+  <!-- ===== Modal impostazioni ===== -->
+  <div class="modal hidden" id="settingsModal">
+    <div class="modal-card">
+      <button class="modal-close" id="closeSettings">✕</button>
+      <h2>⚙️ Impostazioni</h2>
+
+      <div id="settingsLock" class="lock-box">
+        <p class="hint">Le impostazioni sono protette da password.</p>
+        <input type="password" id="lockPasswordInput" placeholder="Password" inputmode="numeric">
+        <div class="btn-row">
+          <button class="btn-sm primary" id="unlockBtn">Sblocca</button>
+        </div>
+        <div class="status-line error" id="lockError"></div>
+      </div>
+
+      <div id="settingsContent" class="hidden">
+        <p class="hint">Personalizza titolo, sottotitolo, logo, sfondo, spicchi e collegamento a Google Apps Script.</p>
+
+        <div class="field-group">
+          <label for="titleInput">Titolo</label>
+          <input type="text" id="titleInput" placeholder="🎡 Ruota della Fortuna">
+          <div class="btn-row"><button class="btn-sm primary" id="applyTitleBtn">Applica</button></div>
+        </div>
+
+        <div class="field-group">
+          <label for="subtitleInput">Sottotitolo</label>
+          <input type="text" id="subtitleInput" placeholder="Gira la ruota e vinci subito il tuo gadget!">
+          <div class="btn-row"><button class="btn-sm primary" id="applySubtitleBtn">Applica</button></div>
+        </div>
+
+        <hr class="sep">
+
+        <div class="field-group">
+          <label for="logoUrl">Logo al centro della ruota (URL immagine)</label>
+          <input type="url" id="logoUrl" placeholder="https://esempio.it/logo.png">
+          <div class="btn-row">
+            <button class="btn-sm primary" id="applyLogoBtn">Applica</button>
+            <button class="btn-sm" id="removeLogoBtn">Rimuovi</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="logoFile">…oppure carica un'immagine dal dispositivo</label>
+          <input type="file" id="logoFile" accept="image/*">
+        </div>
+
+        <hr class="sep">
+
+        <div class="field-group">
+          <label for="bgUrl">Sfondo personalizzato (URL immagine)</label>
+          <input type="url" id="bgUrl" placeholder="https://esempio.it/mio-sfondo.jpg">
+          <div class="btn-row">
+            <button class="btn-sm primary" id="applyBgBtn">Applica sfondo</button>
+            <button class="btn-sm" id="removeBgBtn">Rimuovi</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="bgFile">…oppure carica un'immagine dal dispositivo</label>
+          <input type="file" id="bgFile" accept="image/*">
+        </div>
+
+        <hr class="sep">
+
+        <div class="field-group">
+          <label>Spicchi della ruota</label>
+          <p class="hint">Aggiungi, elimina, riordina (▲▼) e modifica ogni spicchio: colore, icona (emoji), nome del premio, probabilità e — se vuoi un disegno personalizzato invece dell'emoji — il link a un'immagine del premio. I numeri di probabilità non devono sommare 100: vengono normalizzati automaticamente.</p>
+          <div class="seg-list" id="segList"></div>
+          <div class="btn-row">
+            <button class="btn-sm primary" id="addSegBtn">+ Aggiungi spicchio</button>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <div class="field-group">
+          <label for="appsScriptUrl">URL Web App di Google Apps Script (opzionale)</label>
+          <input type="url" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+          <div class="btn-row">
+            <button class="btn-sm primary" id="loadSettingsBtn">Carica da Google Sheet</button>
+          </div>
+          <div class="status-line" id="statusLine"></div>
+        </div>
+
+        <hr class="sep">
+
+        <div class="btn-row">
+          <button class="btn-sm" id="resetAllBtn">↺ Ripristina tutto ai valori predefiniti</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Overlay vincita ===== -->
+  <div class="win-overlay hidden" id="winOverlay">
+    <div class="win-card">
+      <div class="win-icon" id="winIcon">🎁</div>
+      <div class="win-title">HAI VINTO!</div>
+      <div class="win-prize" id="winPrizeLabel">Premio</div>
+      <div class="win-sub">Ritira il tuo premio allo stand 🎉</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     CONFIGURAZIONE
+     Se hai pubblicato lo script Google Apps Script (vedi file
+     Code.gs e ISTRUZIONI incluse), incolla qui sotto l'URL
+     "…/exec" per caricare automaticamente gli spicchi ad ogni
+     apertura della pagina. Puoi lasciarlo vuoto e impostarlo
+     al volo dal pannello ⚙️ Impostazioni (password: 2006).
+  ========================================================= */
+  const CONFIG = {
+    APPS_SCRIPT_URL: "" // es: "https://script.google.com/macros/s/AKfycb.../exec"
+  };
+
+  const SETTINGS_PASSWORD = "2006";
+  const STORAGE_KEY = "ruotaFortunaState_v1";
+
+  const DEFAULT_TITLE = "🎡 Ruota della Fortuna";
+  const DEFAULT_SUBTITLE = "Gira la ruota e vinci subito il tuo gadget!";
+
+  // 8 spicchi = 2 per ciascuno dei 4 premi gadget richiesti
+  const DEFAULT_SEGMENTS = [
+    { label: "Cappellino", icon: "🧢", image: "", color: "#FF6B6B", probability: 12.5 },
+    { label: "Sticker",    icon: "🏷️", image: "", color: "#4ECDC4", probability: 12.5 },
+    { label: "Borraccia",  icon: "🍶", image: "", color: "#FFD93D", probability: 12.5 },
+    { label: "Shopper",    icon: "🛍️", image: "", color: "#6C5CE7", probability: 12.5 },
+    { label: "Cappellino", icon: "🧢", image: "", color: "#FF6B6B", probability: 12.5 },
+    { label: "Sticker",    icon: "🏷️", image: "", color: "#4ECDC4", probability: 12.5 },
+    { label: "Borraccia",  icon: "🍶", image: "", color: "#FFD93D", probability: 12.5 },
+    { label: "Shopper",    icon: "🛍️", image: "", color: "#6C5CE7", probability: 12.5 }
+  ];
+
+  let segments = DEFAULT_SEGMENTS.map(s => ({...s}));
+  let settingsUnlocked = false;
+  let currentLogoUrl = null;
+  let currentBgUrl = null;
+
+  function guessIcon(label){
+    const l = (label || "").toLowerCase();
+    if(l.includes("cappell")) return "🧢";
+    if(l.includes("sticker") || l.includes("adesiv")) return "🏷️";
+    if(l.includes("borracc") || l.includes("bottigl")) return "🍶";
+    if(l.includes("shopper") || l.includes("borsa") || l.includes("sacchett")) return "🛍️";
+    return "🎁";
+  }
+
+  /* ---------------- Elementi DOM ---------------- */
+  const wheelCanvas   = document.getElementById("wheelCanvas");
+  const wheelCtx      = wheelCanvas.getContext("2d");
+  const wheelRotor     = document.getElementById("wheelRotor");
+  const bulbsWrap      = document.getElementById("bulbs");
+  const spinBtn        = document.getElementById("spinBtn");
+
+  const titleText      = document.getElementById("titleText");
+  const subtitleText   = document.getElementById("subtitleText");
+  const hubEmoji        = document.getElementById("hubEmoji");
+  const hubLogo         = document.getElementById("hubLogo");
+
+  const settingsBtn    = document.getElementById("settingsBtn");
+  const settingsModal  = document.getElementById("settingsModal");
+  const closeSettings  = document.getElementById("closeSettings");
+
+  const settingsLock    = document.getElementById("settingsLock");
+  const settingsContent = document.getElementById("settingsContent");
+  const lockPasswordInput = document.getElementById("lockPasswordInput");
+  const unlockBtn        = document.getElementById("unlockBtn");
+  const lockError         = document.getElementById("lockError");
+
+  const titleInput     = document.getElementById("titleInput");
+  const subtitleInput  = document.getElementById("subtitleInput");
+  const applyTitleBtn  = document.getElementById("applyTitleBtn");
+  const applySubtitleBtn = document.getElementById("applySubtitleBtn");
+
+  const logoUrlInput  = document.getElementById("logoUrl");
+  const applyLogoBtn  = document.getElementById("applyLogoBtn");
+  const removeLogoBtn = document.getElementById("removeLogoBtn");
+  const logoFileInput = document.getElementById("logoFile");
+
+  const appsScriptInput= document.getElementById("appsScriptUrl");
+  const loadSettingsBtn= document.getElementById("loadSettingsBtn");
+  const statusLine     = document.getElementById("statusLine");
+
+  const bgUrlInput     = document.getElementById("bgUrl");
+  const applyBgBtn     = document.getElementById("applyBgBtn");
+  const removeBgBtn    = document.getElementById("removeBgBtn");
+  const bgFileInput    = document.getElementById("bgFile");
+
+  const segList        = document.getElementById("segList");
+  const addSegBtn       = document.getElementById("addSegBtn");
+  const resetAllBtn      = document.getElementById("resetAllBtn");
+
+  const winOverlay     = document.getElementById("winOverlay");
+  const winIcon        = document.getElementById("winIcon");
+  const winPrizeLabel  = document.getElementById("winPrizeLabel");
+
+  const confettiCanvas = document.getElementById("confettiCanvas");
+  const confettiCtx    = confettiCanvas.getContext("2d");
+
+  /* ---------------- Stato rotazione ---------------- */
+  let rotation = 0;          // rotazione cumulativa in gradi (non si azzera mai)
+  let spinning = false;
+  const SPIN_DURATION = 10000; // 10 secondi, come richiesto
+
+  /* =========================================================
+     PERSISTENZA LOCALE (facoltativa, non blocca nulla se non
+     disponibile: es. modalità privata del browser)
+  ========================================================= */
+  function saveState(){
+    try{
+      const state = {
+        segments: segments,
+        title: titleText.textContent,
+        subtitle: subtitleText.textContent,
+        logo: currentLogoUrl,
+        background: currentBgUrl
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){ /* storage non disponibile: ignora */ }
+  }
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return null;
+      const state = JSON.parse(raw);
+      if(!state || !Array.isArray(state.segments) || state.segments.length === 0) return null;
+      return state;
+    }catch(e){ return null; }
+  }
+
+  /* =========================================================
+     DISEGNO RUOTA
+  ========================================================= */
+  function lighten(hex, amount){
+    const c = hex.replace('#','');
+    const full = c.length===3 ? c.split('').map(ch=>ch+ch).join('') : c;
+    const num = parseInt(full,16);
+    let r = (num>>16)+amount, g=((num>>8)&0xff)+amount, b=(num&0xff)+amount;
+    r=Math.min(255,Math.max(0,r)); g=Math.min(255,Math.max(0,g)); b=Math.min(255,Math.max(0,b));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function fitFontSize(ctx, text, maxWidth, startSize, minSize, prefix){
+    let size = startSize;
+    ctx.font = prefix + size + "px sans-serif";
+    while(size > minSize && ctx.measureText(text).width > maxWidth){
+      size -= 1;
+      ctx.font = prefix + size + "px sans-serif";
+    }
+    return size;
+  }
+
+  // Cache delle immagini personalizzate dei premi (URL -> Image). Quando
+  // un'immagine termina il caricamento la ruota viene ridisegnata.
+  const imageCache = {};
+  function getSegmentImage(url){
+    if(!url) return null;
+    if(imageCache[url]) return imageCache[url];
+    const entry = { img: new Image(), loaded: false, failed: false };
+    entry.img.onload = () => { entry.loaded = true; renderWheel(); };
+    entry.img.onerror = () => { entry.failed = true; };
+    entry.img.src = url;
+    imageCache[url] = entry;
+    return entry;
+  }
+
+  function drawFittedLabel(ctx, text, y, maxWidth){
+    const size = fitFontSize(ctx, text, maxWidth, 19, 9, "bold ");
+    ctx.font = `bold ${size}px 'Segoe UI', Arial, sans-serif`;
+    ctx.lineWidth = Math.max(2, size/6);
+    ctx.strokeStyle = "rgba(0,0,0,.55)";
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeText(text, 0, y);
+    ctx.fillText(text, 0, y);
+  }
+
+  function renderWheel(){
+    const dpr = window.devicePixelRatio || 1;
+    const size = 500;
+    wheelCanvas.width = size*dpr;
+    wheelCanvas.height = size*dpr;
+    wheelCtx.setTransform(dpr,0,0,dpr,0,0);
+
+    const cx = size/2, cy = size/2, radius = size/2 - 8;
+    const n = segments.length;
+    const seg = (Math.PI*2)/n;
+
+    wheelCtx.clearRect(0,0,size,size);
+
+    for(let i=0;i<n;i++){
+      const s = segments[i];
+      const start = -Math.PI/2 + i*seg;
+      const end = start + seg;
+      const grad = wheelCtx.createRadialGradient(cx,cy,20,cx,cy,radius);
+      grad.addColorStop(0, lighten(s.color, 60));
+      grad.addColorStop(1, s.color);
+
+      wheelCtx.beginPath();
+      wheelCtx.moveTo(cx,cy);
+      wheelCtx.arc(cx,cy,radius,start,end);
+      wheelCtx.closePath();
+      wheelCtx.fillStyle = grad;
+      wheelCtx.fill();
+      wheelCtx.lineWidth = 5;
+      wheelCtx.strokeStyle = "#ffffff";
+      wheelCtx.stroke();
+
+      // Disegno (icona o immagine) al centro dello spicchio, con il nome
+      // del premio nella parte più larga (vicino al bordo). Le dimensioni
+      // del testo si adattano automaticamente per non uscire dallo
+      // spicchio, e il disegno viene centrato mantenendo le proporzioni
+      // originali (nessuno stiramento) così resta ben allineato anche
+      // con immagini non quadrate.
+      const mid = start + seg/2;
+      wheelCtx.save();
+      wheelCtx.translate(cx,cy);
+      wheelCtx.rotate(mid + Math.PI/2);
+      wheelCtx.textAlign = "center";
+
+      const topLabelR = radius*0.80;
+      const artR = radius*0.45;
+      const labelMaxWTop = Math.max(24, topLabelR*seg*0.9);
+      const artMaxW = Math.max(30, artR*seg*0.9);
+
+      const labelText = s.label || "Premio";
+      drawFittedLabel(wheelCtx, labelText, -topLabelR, labelMaxWTop);
+
+      const imgEntry = getSegmentImage(s.image);
+      if(imgEntry && imgEntry.loaded){
+        // "contain" centrato: adatta il disegno al riquadro disponibile
+        // senza deformarlo, centrandolo esattamente sul punto (0,-artR).
+        const boxSize = Math.max(32, Math.min(artMaxW, radius*0.42));
+        const naturalW = imgEntry.img.naturalWidth || 1;
+        const naturalH = imgEntry.img.naturalHeight || 1;
+        const scale = Math.min(boxSize/naturalW, boxSize/naturalH);
+        const drawW = naturalW*scale;
+        const drawH = naturalH*scale;
+        wheelCtx.drawImage(imgEntry.img, -drawW/2, -artR-drawH/2, drawW, drawH);
+      }else{
+        const iconText = s.icon || "🎁";
+        const iconSize = fitFontSize(wheelCtx, iconText, artMaxW, 64, 22, "bold ");
+        wheelCtx.font = `bold ${iconSize}px sans-serif`;
+        wheelCtx.fillStyle = "#ffffff";
+        wheelCtx.textBaseline = "middle";
+        wheelCtx.fillText(iconText, 0, -artR);
+        wheelCtx.textBaseline = "alphabetic";
+      }
+
+      wheelCtx.restore();
+    }
+  }
+
+  function createBulbs(){
+    bulbsWrap.innerHTML = "";
+    const count = 20;
+    for(let i=0;i<count;i++){
+      const angle = (i/count) * Math.PI*2;
+      const bulb = document.createElement("div");
+      bulb.className = "bulb";
+      bulb.style.left = (50 + 49*Math.cos(angle)) + "%";
+      bulb.style.top  = (50 + 49*Math.sin(angle)) + "%";
+      bulb.style.animationDelay = (i*0.07) + "s";
+      bulbsWrap.appendChild(bulb);
+    }
+  }
+
+  /* =========================================================
+     AUDIO (sintetizzato via Web Audio API, nessun file esterno)
+  ========================================================= */
+  let audioCtx = null;
+  function getAudioCtx(){
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+    }
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playTick(progress){
+    try{
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = 950 - progress*450;
+      gain.gain.setValueAtTime(0.16, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.055);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.06);
+    }catch(e){ /* audio non disponibile, ignora */ }
+  }
+
+  function playWinFanfare(){
+    try{
+      const ctx = getAudioCtx();
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq,i)=>{
+        const t0 = ctx.currentTime + i*0.15;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.28, t0+0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0+0.42);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t0); osc.stop(t0+0.46);
+      });
+      const chordTime = ctx.currentTime + notes.length*0.15;
+      [1046.5,1318.5,1568.0].forEach(freq=>{
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, chordTime);
+        gain.gain.exponentialRampToValueAtTime(0.22, chordTime+0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, chordTime+1.3);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(chordTime); osc.stop(chordTime+1.35);
+      });
+    }catch(e){ /* audio non disponibile, ignora */ }
+  }
+
+  /* =========================================================
+     CORIANDOLI
+  ========================================================= */
+  let confettiParticles = [];
+  let confettiAnimId = null;
+  let confettiEndTime = 0;
+
+  function launchConfetti(){
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+    confettiCanvas.style.display = "block";
+    const colors = ["#FF6B6B","#4ECDC4","#FFD93D","#6C5CE7","#FF9F1C","#2EC4B6","#ffffff"];
+    confettiParticles = Array.from({length:170}).map(()=>({
+      x: Math.random()*confettiCanvas.width,
+      y: -20 - Math.random()*confettiCanvas.height*0.6,
+      r: 4 + Math.random()*6,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      speedY: 2.2 + Math.random()*3.2,
+      speedX: (Math.random()-0.5)*2.4,
+      rotation: Math.random()*360,
+      rotSpeed: (Math.random()-0.5)*12,
+      shape: Math.random() < 0.5 ? "rect" : "circle"
+    }));
+    confettiEndTime = performance.now() + 4200;
+    cancelAnimationFrame(confettiAnimId);
+    animateConfetti();
+  }
+
+  function animateConfetti(){
+    confettiCtx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+    const now = performance.now();
+    let active = false;
+    confettiParticles.forEach(p=>{
+      p.y += p.speedY;
+      p.x += p.speedX + Math.sin(p.y*0.01);
+      p.rotation += p.rotSpeed;
+      if(p.y < confettiCanvas.height + 30) active = true;
+      confettiCtx.save();
+      confettiCtx.translate(p.x, p.y);
+      confettiCtx.rotate(p.rotation*Math.PI/180);
+      confettiCtx.fillStyle = p.color;
+      if(p.shape === "rect"){
+        confettiCtx.fillRect(-p.r, -p.r*0.6, p.r*2, p.r*1.2);
+      }else{
+        confettiCtx.beginPath();
+        confettiCtx.arc(0,0,p.r,0,Math.PI*2);
+        confettiCtx.fill();
+      }
+      confettiCtx.restore();
+    });
+    if(now < confettiEndTime && active){
+      confettiAnimId = requestAnimationFrame(animateConfetti);
+    }else{
+      confettiCtx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+      confettiCanvas.style.display = "none";
+    }
+  }
+
+  /* =========================================================
+     LOGICA DI ROTAZIONE / VINCITA (si vince sempre)
+  ========================================================= */
+  function pickWeightedIndex(){
+    const weights = segments.map(s => Math.max(0, Number(s.probability) || 0));
+    const sum = weights.reduce((a,b)=>a+b,0);
+    const norm = sum > 0 ? weights.map(w=>w/sum) : segments.map(()=>1/segments.length);
+    let r = Math.random();
+    let acc = 0;
+    for(let i=0;i<norm.length;i++){
+      acc += norm[i];
+      if(r <= acc) return i;
+    }
+    return norm.length - 1;
+  }
+
+  function easeOutQuart(t){ return 1 - Math.pow(1-t, 4); }
+
+  let spinStartRotation = 0;
+  let spinTargetRotation = 0;
+  let spinStartTime = 0;
+  let lastTickRot = 0;
+  let currentSegAngleDeg = 45;
+  let targetIndexGlobal = 0;
+
+  function spin(){
+    if(spinning || segments.length === 0) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    spinBtn.textContent = "🎡 Girando…";
+    getAudioCtx(); // sblocca l'audio al gesto dell'utente
+
+    const idx = pickWeightedIndex();
+    const n = segments.length;
+    const segAngleDeg = 360/n;
+    const center = idx*segAngleDeg + segAngleDeg/2;
+    const margin = segAngleDeg*0.32;
+    const jitter = (Math.random()*2 - 1) * margin;
+    const desiredAngle = ((center + jitter) % 360 + 360) % 360;      // gradi orari dall'alto
+    const desiredMod = ((360 - desiredAngle) % 360 + 360) % 360;      // rotazione ruota necessaria (mod 360)
+    const currentMod = ((rotation % 360) + 360) % 360;
+    const delta = ((desiredMod - currentMod) % 360 + 360) % 360;
+    const fullSpins = 6 + Math.floor(Math.random()*4);                // 6-9 giri extra
+
+    spinStartRotation = rotation;
+    spinTargetRotation = rotation + delta + fullSpins*360;
+    spinStartTime = performance.now();
+    lastTickRot = spinStartRotation;
+    currentSegAngleDeg = segAngleDeg;
+    targetIndexGlobal = idx;
+
+    requestAnimationFrame(animateSpin);
+  }
+
+  function animateSpin(){
+    const now = performance.now();
+    const t = Math.min((now - spinStartTime)/SPIN_DURATION, 1);
+    const eased = easeOutQuart(t);
+    const newRot = spinStartRotation + (spinTargetRotation - spinStartRotation)*eased;
+
+    const prevSeg = Math.floor(lastTickRot/currentSegAngleDeg);
+    const curSeg = Math.floor(newRot/currentSegAngleDeg);
+    if(curSeg !== prevSeg){ playTick(t); }
+    lastTickRot = newRot;
+
+    wheelRotor.style.transform = `rotate(${newRot}deg)`;
+    rotation = newRot;
+
+    if(t < 1){
+      requestAnimationFrame(animateSpin);
+    }else{
+      wheelRotor.style.transform = `rotate(${spinTargetRotation}deg)`;
+      rotation = spinTargetRotation;
+      finishSpin(targetIndexGlobal);
+    }
+  }
+
+  let winTimer = null;
+  function finishSpin(index){
+    spinning = false;
+    const prize = segments[index];
+    launchConfetti();
+    playWinFanfare();
+    showWinOverlay(prize);
+  }
+
+  function showWinOverlay(prize){
+    winIcon.textContent = prize.icon || "🎁";
+    winPrizeLabel.textContent = prize.label;
+    spinBtn.classList.add("hidden");
+
+    winOverlay.classList.remove("hidden");
+    // forziamo un reflow prima di aggiungere la classe "show" per far partire la transizione
+    void winOverlay.offsetWidth;
+    winOverlay.classList.add("show");
+
+    clearTimeout(winTimer);
+    winTimer = setTimeout(()=>{
+      winOverlay.classList.remove("show");
+      setTimeout(()=>{ winOverlay.classList.add("hidden"); }, 400);
+      spinBtn.classList.remove("hidden");
+      spinBtn.disabled = false;
+      spinBtn.textContent = "🎡 GIRA DI NUOVO";
+    }, 7000); // il gadget vinto resta in sovraimpressione per 7 secondi
+  }
+
+  /* =========================================================
+     EDITOR SPICCHI (impostazioni)
+  ========================================================= */
+  function updateAllPercents(){
+    const sum = segments.reduce((a,s)=>a + Math.max(0,Number(s.probability)||0), 0) || 1;
+    const rows = segList.querySelectorAll(".seg-row");
+    rows.forEach((row,i)=>{
+      const pct = Math.round((Math.max(0,Number(segments[i].probability)||0)/sum)*100);
+      const span = row.querySelector("[data-pct]");
+      if(span) span.textContent = pct + "%";
+    });
+  }
+
+  function renderSegmentEditor(){
+    const sum = segments.reduce((a,s)=>a + Math.max(0,Number(s.probability)||0), 0) || 1;
+    segList.innerHTML = "";
+    segments.forEach((s,i)=>{
+      const pct = Math.round((Math.max(0,Number(s.probability)||0)/sum)*100);
+      const row = document.createElement("div");
+      row.className = "seg-row";
+      row.dataset.index = String(i);
+      row.innerHTML = `
+        <div class="seg-order">
+          <button type="button" class="seg-btn" data-action="up" title="Sposta su">▲</button>
+          <button type="button" class="seg-btn" data-action="down" title="Sposta giù">▼</button>
+        </div>
+        <input type="color" class="seg-color" data-field="color" value="${s.color}">
+        <input type="text" class="seg-icon" data-field="icon" value="${s.icon || ''}" maxlength="4" placeholder="🎁">
+        <input type="text" class="seg-label" data-field="label" value="${(s.label||'').replace(/"/g,'&quot;')}" placeholder="Nome premio">
+        <input type="number" class="seg-prob" data-field="probability" value="${s.probability}" min="0" step="1">
+        <span class="seg-pct" data-pct>${pct}%</span>
+        <button type="button" class="seg-btn danger" data-action="delete" title="Elimina spicchio">🗑️</button>
+        <input type="url" class="seg-image" data-field="image" value="${(s.image||'').replace(/"/g,'&quot;')}" placeholder="Immagine premio (URL, opzionale — sostituisce l'icona)">
+      `;
+      segList.appendChild(row);
+    });
+  }
+
+  segList.addEventListener("input", (e)=>{
+    const row = e.target.closest(".seg-row");
+    if(!row) return;
+    const idx = Number(row.dataset.index);
+    const field = e.target.dataset.field;
+    if(!field || !segments[idx]) return;
+
+    if(field === "probability"){
+      segments[idx].probability = Math.max(0, Number(e.target.value) || 0);
+      updateAllPercents();
+    }else if(field === "icon"){
+      segments[idx].icon = e.target.value.trim() || "🎁";
+      renderWheel();
+    }else if(field === "label"){
+      segments[idx].label = e.target.value;
+      renderWheel();
+    }else if(field === "color"){
+      segments[idx].color = e.target.value;
+      renderWheel();
+    }else if(field === "image"){
+      segments[idx].image = e.target.value.trim();
+      renderWheel();
+    }
+    saveState();
+  });
+
+  segList.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button[data-action]");
+    if(!btn) return;
+    const row = btn.closest(".seg-row");
+    const idx = Number(row.dataset.index);
+    const action = btn.dataset.action;
+
+    if(action === "up" && idx > 0){
+      [segments[idx-1], segments[idx]] = [segments[idx], segments[idx-1]];
+      renderSegmentEditor(); renderWheel(); saveState();
+    }else if(action === "down" && idx < segments.length-1){
+      [segments[idx+1], segments[idx]] = [segments[idx], segments[idx+1]];
+      renderSegmentEditor(); renderWheel(); saveState();
+    }else if(action === "delete"){
+      if(segments.length <= 1){
+        alert("Deve esserci almeno uno spicchio sulla ruota.");
+        return;
+      }
+      segments.splice(idx,1);
+      renderSegmentEditor(); renderWheel(); saveState();
+    }
+  });
+
+  addSegBtn.addEventListener("click", ()=>{
+    segments.push({ label: "Nuovo premio", icon: "🎁", image: "", color: "#999999", probability: 10 });
+    renderSegmentEditor();
+    renderWheel();
+    saveState();
+    segList.scrollTop = segList.scrollHeight;
+  });
+
+  /* =========================================================
+     IMPOSTAZIONI VIA GOOGLE APPS SCRIPT
+  ========================================================= */
+  function setStatus(msg, type){
+    statusLine.textContent = msg;
+    statusLine.className = "status-line " + (type||"");
+  }
+
+  async function loadSettings(url){
+    if(!url){
+      setStatus("Nessun URL Apps Script configurato: uso le impostazioni attuali.", "warn");
+      return;
+    }
+    setStatus("Caricamento impostazioni…", "info");
+    try{
+      const res = await fetch(url, { method: "GET" });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const list = Array.isArray(data && data.segments) ? data.segments
+                 : Array.isArray(data && data.prizes) ? data.prizes // compatibilità con la versione precedente del foglio
+                 : null;
+      if(!list || list.length === 0){
+        throw new Error("Formato dati non valido");
+      }
+      const cleaned = list.map(s => {
+        const label = String(s.label || s.id || "Premio").trim();
+        const icon = String(s.icon || "").trim() || guessIcon(label);
+        return {
+          label: label,
+          icon: icon,
+          image: String(s.image || "").trim(),
+          color: /^#([0-9a-f]{3}){1,2}$/i.test(s.color) ? s.color : "#999999",
+          probability: Number(s.probability) >= 0 ? Number(s.probability) : 1
+        };
+      }).filter(s => s.label);
+
+      if(cleaned.length === 0) throw new Error("Nessuno spicchio valido trovato");
+
+      segments = cleaned;
+      renderWheel();
+      renderSegmentEditor();
+      saveState();
+      setStatus(`✅ Impostazioni caricate (${cleaned.length} spicchi) alle ${new Date().toLocaleTimeString('it-IT')}.`, "ok");
+    }catch(err){
+      console.error(err);
+      setStatus("⚠️ Impossibile caricare le impostazioni da Apps Script (continuo con quelle attuali). Dettaglio: " + err.message, "error");
+    }
+  }
+
+  /* =========================================================
+     TITOLO / SOTTOTITOLO
+  ========================================================= */
+  applyTitleBtn.addEventListener("click", ()=>{
+    titleText.textContent = titleInput.value.trim() || DEFAULT_TITLE;
+    saveState();
+  });
+  applySubtitleBtn.addEventListener("click", ()=>{
+    subtitleText.textContent = subtitleInput.value.trim() || DEFAULT_SUBTITLE;
+    saveState();
+  });
+
+  /* =========================================================
+     LOGO CENTRALE
+  ========================================================= */
+  function applyLogo(url){
+    hubLogo.src = url;
+    hubLogo.style.display = "block";
+    hubEmoji.style.display = "none";
+    currentLogoUrl = url;
+    saveState();
+  }
+  function removeLogo(){
+    hubLogo.removeAttribute("src");
+    hubLogo.style.display = "none";
+    hubEmoji.style.display = "flex";
+    currentLogoUrl = null;
+    saveState();
+  }
+  applyLogoBtn.addEventListener("click", ()=>{
+    const url = logoUrlInput.value.trim();
+    if(url) applyLogo(url);
+  });
+  removeLogoBtn.addEventListener("click", ()=>{
+    removeLogo();
+    logoUrlInput.value = "";
+  });
+  logoFileInput.addEventListener("change", (e)=>{
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=> applyLogo(ev.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  /* =========================================================
+     SFONDO PERSONALIZZATO
+  ========================================================= */
+  function applyBackground(url){
+    document.body.style.setProperty("--custom-bg-url", `url("${url}")`);
+    document.body.style.backgroundImage = `url("${url}")`;
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundPosition = "center";
+    document.body.classList.add("custom-bg");
+    currentBgUrl = url;
+    saveState();
+  }
+  function removeBackground(){
+    document.body.style.backgroundImage = "";
+    document.body.classList.remove("custom-bg");
+    currentBgUrl = null;
+    saveState();
+  }
+
+  /* =========================================================
+     BLOCCO PASSWORD IMPOSTAZIONI
+  ========================================================= */
+  function showSettingsContent(){
+    settingsLock.classList.add("hidden");
+    settingsContent.classList.remove("hidden");
+    titleInput.value = titleText.textContent;
+    subtitleInput.value = subtitleText.textContent;
+    logoUrlInput.value = currentLogoUrl || "";
+    bgUrlInput.value = currentBgUrl || "";
+    appsScriptInput.value = CONFIG.APPS_SCRIPT_URL || "";
+    renderSegmentEditor();
+  }
+
+  function tryUnlock(){
+    if(lockPasswordInput.value === SETTINGS_PASSWORD){
+      settingsUnlocked = true;
+      lockError.textContent = "";
+      lockPasswordInput.value = "";
+      showSettingsContent();
+    }else{
+      lockError.textContent = "Password errata. Riprova.";
+      lockPasswordInput.value = "";
+      lockPasswordInput.focus();
+      settingsLock.classList.remove("shake");
+      void settingsLock.offsetWidth;
+      settingsLock.classList.add("shake");
+    }
+  }
+
+  unlockBtn.addEventListener("click", tryUnlock);
+  lockPasswordInput.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter") tryUnlock();
+  });
+
+  /* =========================================================
+     EVENTI UI
+  ========================================================= */
+  spinBtn.addEventListener("click", spin);
+
+  settingsBtn.addEventListener("click", ()=>{
+    settingsModal.classList.remove("hidden");
+    if(settingsUnlocked){
+      showSettingsContent();
+    }else{
+      settingsLock.classList.remove("hidden");
+      settingsContent.classList.add("hidden");
+      lockPasswordInput.value = "";
+      lockError.textContent = "";
+      setTimeout(()=> lockPasswordInput.focus(), 50);
+    }
+  });
+  closeSettings.addEventListener("click", ()=> settingsModal.classList.add("hidden"));
+  settingsModal.addEventListener("click", (e)=>{ if(e.target === settingsModal) settingsModal.classList.add("hidden"); });
+
+  loadSettingsBtn.addEventListener("click", ()=>{
+    const url = appsScriptInput.value.trim() || CONFIG.APPS_SCRIPT_URL;
+    loadSettings(url);
+  });
+
+  applyBgBtn.addEventListener("click", ()=>{
+    const url = bgUrlInput.value.trim();
+    if(url) applyBackground(url);
+  });
+  removeBgBtn.addEventListener("click", ()=>{
+    removeBackground();
+    bgUrlInput.value = "";
+  });
+  bgFileInput.addEventListener("change", (e)=>{
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=> applyBackground(ev.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  resetAllBtn.addEventListener("click", ()=>{
+    if(!confirm("Ripristinare titolo, sottotitolo, logo, sfondo e spicchi ai valori predefiniti?")) return;
+    segments = DEFAULT_SEGMENTS.map(s => ({...s}));
+    titleText.textContent = DEFAULT_TITLE;
+    subtitleText.textContent = DEFAULT_SUBTITLE;
+    removeLogo();
+    removeBackground();
+    renderWheel();
+    renderSegmentEditor();
+    titleInput.value = DEFAULT_TITLE;
+    subtitleInput.value = DEFAULT_SUBTITLE;
+    logoUrlInput.value = "";
+    bgUrlInput.value = "";
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+    setStatus("Valori predefiniti ripristinati.", "info");
+  });
+
+  window.addEventListener("resize", ()=>{
+    renderWheel();
+    createBulbs();
+  });
+
+  /* =========================================================
+     AVVIO
+  ========================================================= */
+  const saved = loadState();
+  if(saved){
+    segments = saved.segments;
+    if(saved.title) titleText.textContent = saved.title;
+    if(saved.subtitle) subtitleText.textContent = saved.subtitle;
+    if(saved.logo) applyLogo(saved.logo);
+    if(saved.background) applyBackground(saved.background);
+  }
+
+  createBulbs();
+  renderWheel();
+  if(CONFIG.APPS_SCRIPT_URL){
+    loadSettings(CONFIG.APPS_SCRIPT_URL);
+  }
+
+})();
+</script>
+</body>
+</html>
