@@ -183,6 +183,27 @@
   .spin-btn:disabled{ opacity:.6; cursor:not-allowed; }
   .spin-btn.hidden{ display:none; }
 
+  .stock-empty{
+    text-align:center;
+    padding: 14px 18px;
+    border-radius: 16px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.2);
+    max-width: 360px;
+  }
+  .stock-empty.hidden{ display:none; }
+  .stock-empty-title{
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 800;
+  }
+  .stock-empty-sub{
+    margin: 0;
+    font-size: 12.5px;
+    opacity: .85;
+    line-height:1.5;
+  }
+
   /* ---------- Settings gear + modal ---------- */
   .icon-btn{
     position:absolute;
@@ -363,10 +384,100 @@
     text-align:center;
   }
   .seg-pct{
-    width:32px;
+    width:44px;
     font-size:11px;
     opacity:.75;
     text-align:right;
+  }
+  .seg-pct.exhausted{
+    color:#FF9B9B;
+    opacity:1;
+    font-weight:700;
+  }
+
+  /* ---------- Editor campi lead (riusa lo stile .seg-row) ---------- */
+  .lead-type-select{
+    padding:5px 4px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,.2);
+    background:#2a1840;
+    color:#fff;
+    font-size:11px;
+  }
+  .lead-required-label{
+    display:flex;
+    align-items:center;
+    gap:3px;
+    font-size:10.5px;
+    opacity:.85;
+    white-space:nowrap;
+  }
+  .lead-required-label input{ width:14px; height:14px; }
+
+  .settings-section-title{
+    margin: 4px 0 4px;
+    font-size:15px;
+  }
+  .switch-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .switch-row input{ width:17px; height:17px; }
+
+  /* ---------- Schermata raccolta leads ---------- */
+  .lead-shell #leadForm{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .lead-field{
+    margin-bottom:14px;
+    text-align:left;
+    width:100%;
+  }
+  .lead-field label{
+    display:block;
+    font-size:13px;
+    margin-bottom:6px;
+    opacity:.9;
+  }
+  .lead-field input,
+  .lead-field textarea{
+    width:100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.25);
+    background: rgba(255,255,255,.08);
+    color:#fff;
+    font-size:14px;
+    font-family: inherit;
+  }
+  .lead-field textarea{ min-height:72px; resize:vertical; }
+  .privacy-row{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    margin: 4px 0 6px;
+    font-size:12.5px;
+    text-align:left;
+  }
+  .privacy-row input[type=checkbox]{
+    margin-top:3px;
+    width:17px; height:17px;
+    flex-shrink:0;
+  }
+  .privacy-row label{ cursor:pointer; }
+  .privacy-row a{ color: var(--accent-gold); text-decoration:underline; }
+  .lead-error{
+    color:#FF9B9B;
+    font-size:12px;
+    min-height:16px;
+    margin-bottom:12px;
+    text-align:left;
   }
 
   /* ---------- Win overlay ---------- */
@@ -421,7 +532,25 @@
 
   <canvas id="confettiCanvas"></canvas>
 
-  <div class="app-shell">
+  <!-- ===== Schermata raccolta leads (facoltativa, prima del gioco) ===== -->
+  <div class="app-shell lead-shell hidden" id="leadShell">
+    <h1>📋 Raccolta leads</h1>
+    <p class="subtitle">Inserisci i tuoi dati per partecipare al gioco</p>
+
+    <form id="leadForm" novalidate>
+      <div id="leadFieldsContainer"></div>
+
+      <div class="privacy-row">
+        <input type="checkbox" id="privacyConsent">
+        <label for="privacyConsent"><span id="privacyPrefixText">Ho letto e accetto la</span> <a id="privacyLinkAnchor" href="#" target="_blank" rel="noopener">privacy policy</a></label>
+      </div>
+      <div class="lead-error" id="leadError"></div>
+
+      <button type="submit" class="spin-btn" id="leadSubmitBtn">🎡 Continua e gioca</button>
+    </form>
+  </div>
+
+  <div class="app-shell" id="gameShell">
     <button class="icon-btn" id="settingsBtn" title="Impostazioni">⚙️</button>
 
     <h1 id="titleText">🎡 Ruota della Fortuna</h1>
@@ -446,6 +575,11 @@
     </div>
 
     <button class="spin-btn" id="spinBtn">🎡 GIRA LA RUOTA</button>
+
+    <div class="stock-empty hidden" id="stockEmptyMsg">
+      <p class="stock-empty-title">😔 Premi esauriti</p>
+      <p class="stock-empty-sub">Al momento non ci sono più premi disponibili. Chiedi allo staff di ricaricare le scorte dalle impostazioni.</p>
+    </div>
 
     <footer>Ogni giro è un premio garantito 🎉</footer>
   </div>
@@ -514,7 +648,7 @@
 
         <div class="field-group">
           <label>Spicchi della ruota</label>
-          <p class="hint">Aggiungi, elimina, riordina (▲▼) e modifica ogni spicchio: colore, icona (emoji), nome del premio, probabilità e — se vuoi un disegno personalizzato invece dell'emoji — il link a un'immagine del premio. I numeri di probabilità non devono sommare 100: vengono normalizzati automaticamente.</p>
+          <p class="hint">Aggiungi, elimina, riordina (▲▼) e modifica ogni spicchio: colore, icona (emoji), nome del premio, quantità disponibile (pz) e — se vuoi un disegno personalizzato invece dell'emoji — il link a un'immagine del premio. La "quantità" è il numero esatto di pezzi rimasti: si riduce da sola di 1 ogni volta che quello spicchio viene vinto. Quando arriva a 0 lo spicchio non verrà più estratto (mostra "Esaurito") finché non aggiorni di nuovo il numero. Se tutti gli spicchi vanno contemporaneamente a 0, la ruota torna a scegliere in modo equo tra tutti finché non ripristini le scorte.</p>
           <div class="seg-list" id="segList"></div>
           <div class="btn-row">
             <button class="btn-sm primary" id="addSegBtn">+ Aggiungi spicchio</button>
@@ -530,6 +664,43 @@
             <button class="btn-sm primary" id="loadSettingsBtn">Carica da Google Sheet</button>
           </div>
           <div class="status-line" id="statusLine"></div>
+        </div>
+
+        <hr class="sep">
+
+        <h3 class="settings-section-title">📋 Impostazioni raccolta leads</h3>
+        <p class="hint">Impostazioni separate da quelle del gioco: qui decidi se mostrare un modulo di raccolta dati prima della ruota, quali campi chiedere e dove inviare i dati.</p>
+
+        <div class="field-group">
+          <label class="switch-row"><input type="checkbox" id="leadEnabledToggle"> Attiva raccolta leads prima del gioco</label>
+        </div>
+
+        <div class="field-group">
+          <label for="leadAppsScriptUrl">URL Web App Google Apps Script per i lead</label>
+          <input type="url" id="leadAppsScriptUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+          <p class="hint">I dati inviati da qui vengono aggiunti come nuova riga in un foglio Google condiviso (può essere lo stesso Apps Script della ruota, o uno dedicato).</p>
+        </div>
+
+        <div class="field-group">
+          <label for="leadPrivacyUrl">Link informativa privacy (URL, si apre in una nuova pagina)</label>
+          <input type="url" id="leadPrivacyUrl" placeholder="https://esempio.it/privacy">
+        </div>
+        <div class="field-group">
+          <label for="leadPrivacyPrefix">Testo prima del link</label>
+          <input type="text" id="leadPrivacyPrefix" placeholder="Ho letto e accetto la">
+        </div>
+        <div class="field-group">
+          <label for="leadPrivacyLinkText">Testo del link</label>
+          <input type="text" id="leadPrivacyLinkText" placeholder="privacy policy">
+        </div>
+
+        <div class="field-group">
+          <label>Campi del modulo</label>
+          <p class="hint">Aggiungi, elimina, riordina (▲▼) e modifica ogni campo: nome, tipo e se è obbligatorio.</p>
+          <div class="seg-list" id="leadFieldList"></div>
+          <div class="btn-row">
+            <button class="btn-sm primary" id="addLeadFieldBtn">+ Aggiungi campo</button>
+          </div>
         </div>
 
         <hr class="sep">
@@ -573,22 +744,46 @@
   const DEFAULT_TITLE = "🎡 Ruota della Fortuna";
   const DEFAULT_SUBTITLE = "Gira la ruota e vinci subito il tuo gadget!";
 
-  // 8 spicchi = 2 per ciascuno dei 4 premi gadget richiesti
+  // 8 spicchi = 2 per ciascuno dei 4 premi gadget richiesti. "quantity" è
+  // il numero esatto di pezzi disponibili per quello spicchio: si riduce
+  // di 1 automaticamente ogni volta che lo spicchio viene vinto, e viene
+  // salvato così le scorte restano corrette anche dopo aver ricaricato
+  // la pagina. Quando arriva a 0 quello spicchio non viene più estratto
+  // (resta comunque visibile sulla ruota).
   const DEFAULT_SEGMENTS = [
-    { label: "Cappellino", icon: "🧢", image: "", color: "#FF6B6B", probability: 12.5 },
-    { label: "Sticker",    icon: "🏷️", image: "", color: "#4ECDC4", probability: 12.5 },
-    { label: "Borraccia",  icon: "🍶", image: "", color: "#FFD93D", probability: 12.5 },
-    { label: "Shopper",    icon: "🛍️", image: "", color: "#6C5CE7", probability: 12.5 },
-    { label: "Cappellino", icon: "🧢", image: "", color: "#FF6B6B", probability: 12.5 },
-    { label: "Sticker",    icon: "🏷️", image: "", color: "#4ECDC4", probability: 12.5 },
-    { label: "Borraccia",  icon: "🍶", image: "", color: "#FFD93D", probability: 12.5 },
-    { label: "Shopper",    icon: "🛍️", image: "", color: "#6C5CE7", probability: 12.5 }
+    { label: "Cappellino", icon: "🧢", image: "", color: "#FF6B6B", quantity: 10 },
+    { label: "Sticker",    icon: "🏷️", image: "", color: "#4ECDC4", quantity: 10 },
+    { label: "Borraccia",  icon: "🍶", image: "", color: "#FFD93D", quantity: 10 },
+    { label: "Shopper",    icon: "🛍️", image: "", color: "#6C5CE7", quantity: 10 },
+    { label: "Cappellino", icon: "🧢", image: "", color: "#FF6B6B", quantity: 10 },
+    { label: "Sticker",    icon: "🏷️", image: "", color: "#4ECDC4", quantity: 10 },
+    { label: "Borraccia",  icon: "🍶", image: "", color: "#FFD93D", quantity: 10 },
+    { label: "Shopper",    icon: "🛍️", image: "", color: "#6C5CE7", quantity: 10 }
   ];
 
   let segments = DEFAULT_SEGMENTS.map(s => ({...s}));
   let settingsUnlocked = false;
   let currentLogoUrl = null;
   let currentBgUrl = null;
+
+  // Campi predefiniti del modulo di raccolta leads
+  const DEFAULT_LEAD_FIELDS = [
+    { label: "Nome",                type: "text",     required: true  },
+    { label: "Cognome",             type: "text",     required: true  },
+    { label: "Email",                type: "email",    required: true  },
+    { label: "Numero di telefono",  type: "tel",      required: false },
+    { label: "Note",                 type: "textarea", required: false }
+  ];
+  const DEFAULT_LEAD_SETTINGS = {
+    enabled: false,
+    appsScriptUrl: "",
+    privacyUrl: "",
+    privacyPrefixText: "Ho letto e accetto la",
+    privacyLinkText: "privacy policy"
+  };
+
+  let leadFields = DEFAULT_LEAD_FIELDS.map(f => ({...f}));
+  let leadSettings = { ...DEFAULT_LEAD_SETTINGS };
 
   function guessIcon(label){
     const l = (label || "").toLowerCase();
@@ -605,6 +800,7 @@
   const wheelRotor     = document.getElementById("wheelRotor");
   const bulbsWrap      = document.getElementById("bulbs");
   const spinBtn        = document.getElementById("spinBtn");
+  const stockEmptyMsg  = document.getElementById("stockEmptyMsg");
 
   const titleText      = document.getElementById("titleText");
   const subtitleText   = document.getElementById("subtitleText");
@@ -651,6 +847,25 @@
   const confettiCanvas = document.getElementById("confettiCanvas");
   const confettiCtx    = confettiCanvas.getContext("2d");
 
+  /* ---------------- Elementi DOM: raccolta leads ---------------- */
+  const leadShell           = document.getElementById("leadShell");
+  const gameShell            = document.getElementById("gameShell");
+  const leadForm              = document.getElementById("leadForm");
+  const leadFieldsContainer    = document.getElementById("leadFieldsContainer");
+  const privacyConsentInput     = document.getElementById("privacyConsent");
+  const privacyPrefixSpan        = document.getElementById("privacyPrefixText");
+  const privacyLinkAnchor         = document.getElementById("privacyLinkAnchor");
+  const leadSubmitBtn              = document.getElementById("leadSubmitBtn");
+  const leadErrorEl                 = document.getElementById("leadError");
+
+  const leadEnabledToggle    = document.getElementById("leadEnabledToggle");
+  const leadAppsScriptUrlInput = document.getElementById("leadAppsScriptUrl");
+  const leadPrivacyUrlInput     = document.getElementById("leadPrivacyUrl");
+  const leadPrivacyPrefixInput   = document.getElementById("leadPrivacyPrefix");
+  const leadPrivacyLinkTextInput  = document.getElementById("leadPrivacyLinkText");
+  const leadFieldList              = document.getElementById("leadFieldList");
+  const addLeadFieldBtn             = document.getElementById("addLeadFieldBtn");
+
   /* ---------------- Stato rotazione ---------------- */
   let rotation = 0;          // rotazione cumulativa in gradi (non si azzera mai)
   let spinning = false;
@@ -667,7 +882,9 @@
         title: titleText.textContent,
         subtitle: subtitleText.textContent,
         logo: currentLogoUrl,
-        background: currentBgUrl
+        background: currentBgUrl,
+        leadFields: leadFields,
+        leadSettings: leadSettings
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }catch(e){ /* storage non disponibile: ignora */ }
@@ -938,8 +1155,35 @@
   /* =========================================================
      LOGICA DI ROTAZIONE / VINCITA (si vince sempre)
   ========================================================= */
+  // Somma delle quantità rimaste su tutti gli spicchi: quando arriva a 0
+  // il gioco si ferma (vedi updateSpinAvailability) invece di continuare
+  // a "vincere" premi che non ci sono più.
+  function totalStockAvailable(){
+    return segments.reduce((sum,s) => sum + Math.max(0, Number(s.quantity) || 0), 0);
+  }
+
+  // Mostra il pulsante "GIRA" oppure il messaggio "Premi esauriti" a
+  // seconda delle scorte residue. Non tocca nulla mentre un giro è in
+  // corso (ci pensa poi il timer di fine vincita).
+  function updateSpinAvailability(){
+    if(spinning) return;
+    if(totalStockAvailable() > 0){
+      stockEmptyMsg.classList.add("hidden");
+      spinBtn.classList.remove("hidden");
+    }else{
+      spinBtn.classList.add("hidden");
+      stockEmptyMsg.classList.remove("hidden");
+    }
+  }
+
   function pickWeightedIndex(){
-    const weights = segments.map(s => Math.max(0, Number(s.probability) || 0));
+    // Il peso di ogni spicchio è la sua quantità (pezzi) rimasta: uno
+    // spicchio a 0 pezzi non può più essere estratto. In condizioni
+    // normali non si arriva mai al caso "tutti a 0", perché
+    // updateSpinAvailability() nasconde il pulsante e blocca il gioco
+    // prima che si possa girare di nuovo; questo ripiego a probabilità
+    // equa resta solo come rete di sicurezza.
+    const weights = segments.map(s => Math.max(0, Number(s.quantity) || 0));
     const sum = weights.reduce((a,b)=>a+b,0);
     const norm = sum > 0 ? weights.map(w=>w/sum) : segments.map(()=>1/segments.length);
     let r = Math.random();
@@ -961,7 +1205,7 @@
   let targetIndexGlobal = 0;
 
   function spin(){
-    if(spinning || segments.length === 0) return;
+    if(spinning || segments.length === 0 || totalStockAvailable() <= 0) return;
     spinning = true;
     spinBtn.disabled = true;
     spinBtn.textContent = "🎡 Girando…";
@@ -1016,6 +1260,16 @@
   function finishSpin(index){
     spinning = false;
     const prize = segments[index];
+
+    // Scala di 1 pezzo la quantità disponibile del premio vinto (mai
+    // sotto zero) e salva subito, così le scorte restano corrette anche
+    // se la pagina viene ricaricata durante l'evento.
+    if(prize){
+      prize.quantity = Math.max(0, (Number(prize.quantity) || 0) - 1);
+      saveState();
+      renderSegmentEditor();
+    }
+
     launchConfetti();
     playWinFanfare();
     showWinOverlay(prize);
@@ -1035,30 +1289,40 @@
     winTimer = setTimeout(()=>{
       winOverlay.classList.remove("show");
       setTimeout(()=>{ winOverlay.classList.add("hidden"); }, 400);
-      spinBtn.classList.remove("hidden");
       spinBtn.disabled = false;
       spinBtn.textContent = "🎡 GIRA DI NUOVO";
+      // Se il premio appena vinto era l'ultimo pezzo rimasto, mostra
+      // "Premi esauriti" invece di far ripartire il pulsante.
+      updateSpinAvailability();
     }, 7000); // il gadget vinto resta in sovraimpressione per 7 secondi
   }
 
   /* =========================================================
      EDITOR SPICCHI (impostazioni)
   ========================================================= */
+  function segPctLabel(qty, sum){
+    if(qty <= 0) return "Esaurito";
+    return Math.round((qty/sum)*100) + "%";
+  }
+
   function updateAllPercents(){
-    const sum = segments.reduce((a,s)=>a + Math.max(0,Number(s.probability)||0), 0) || 1;
+    const sum = segments.reduce((a,s)=>a + Math.max(0,Number(s.quantity)||0), 0) || 1;
     const rows = segList.querySelectorAll(".seg-row");
     rows.forEach((row,i)=>{
-      const pct = Math.round((Math.max(0,Number(segments[i].probability)||0)/sum)*100);
+      const qty = Math.max(0, Number(segments[i].quantity) || 0);
       const span = row.querySelector("[data-pct]");
-      if(span) span.textContent = pct + "%";
+      if(span){
+        span.textContent = segPctLabel(qty, sum);
+        span.classList.toggle("exhausted", qty <= 0);
+      }
     });
   }
 
   function renderSegmentEditor(){
-    const sum = segments.reduce((a,s)=>a + Math.max(0,Number(s.probability)||0), 0) || 1;
+    const sum = segments.reduce((a,s)=>a + Math.max(0,Number(s.quantity)||0), 0) || 1;
     segList.innerHTML = "";
     segments.forEach((s,i)=>{
-      const pct = Math.round((Math.max(0,Number(s.probability)||0)/sum)*100);
+      const qty = Math.max(0, Number(s.quantity) || 0);
       const row = document.createElement("div");
       row.className = "seg-row";
       row.dataset.index = String(i);
@@ -1070,8 +1334,8 @@
         <input type="color" class="seg-color" data-field="color" value="${s.color}">
         <input type="text" class="seg-icon" data-field="icon" value="${s.icon || ''}" maxlength="4" placeholder="🎁">
         <input type="text" class="seg-label" data-field="label" value="${(s.label||'').replace(/"/g,'&quot;')}" placeholder="Nome premio">
-        <input type="number" class="seg-prob" data-field="probability" value="${s.probability}" min="0" step="1">
-        <span class="seg-pct" data-pct>${pct}%</span>
+        <input type="number" class="seg-prob" data-field="quantity" value="${s.quantity}" min="0" step="1" title="Quantità disponibile (pz)">
+        <span class="seg-pct${qty<=0?' exhausted':''}" data-pct>${segPctLabel(qty, sum)}</span>
         <button type="button" class="seg-btn danger" data-action="delete" title="Elimina spicchio">🗑️</button>
         <input type="url" class="seg-image" data-field="image" value="${(s.image||'').replace(/"/g,'&quot;')}" placeholder="Immagine premio (URL, opzionale — sostituisce l'icona)">
       `;
@@ -1086,9 +1350,10 @@
     const field = e.target.dataset.field;
     if(!field || !segments[idx]) return;
 
-    if(field === "probability"){
-      segments[idx].probability = Math.max(0, Number(e.target.value) || 0);
+    if(field === "quantity"){
+      segments[idx].quantity = Math.max(0, Math.round(Number(e.target.value)) || 0);
       updateAllPercents();
+      updateSpinAvailability();
     }else if(field === "icon"){
       segments[idx].icon = e.target.value.trim() || "🎁";
       renderWheel();
@@ -1125,15 +1390,223 @@
       }
       segments.splice(idx,1);
       renderSegmentEditor(); renderWheel(); saveState();
+      updateSpinAvailability();
     }
   });
 
   addSegBtn.addEventListener("click", ()=>{
-    segments.push({ label: "Nuovo premio", icon: "🎁", image: "", color: "#999999", probability: 10 });
+    segments.push({ label: "Nuovo premio", icon: "🎁", image: "", color: "#999999", quantity: 10 });
     renderSegmentEditor();
     renderWheel();
     saveState();
+    updateSpinAvailability();
     segList.scrollTop = segList.scrollHeight;
+  });
+
+  /* =========================================================
+     RACCOLTA LEADS — schermata guest + editor campi (impostazioni)
+  ========================================================= */
+
+  // --- Schermata guest (modulo lead prima del gioco) ---
+  function renderLeadFields(){
+    leadFieldsContainer.innerHTML = "";
+    leadFields.forEach((f,i)=>{
+      const wrap = document.createElement("div");
+      wrap.className = "lead-field";
+
+      const label = document.createElement("label");
+      label.setAttribute("for", "leadInput_" + i);
+      label.textContent = f.label + (f.required ? " *" : "");
+      wrap.appendChild(label);
+
+      let input;
+      if(f.type === "textarea"){
+        input = document.createElement("textarea");
+      }else{
+        input = document.createElement("input");
+        input.type = f.type || "text";
+      }
+      input.id = "leadInput_" + i;
+      input.name = f.label;
+      if(f.required) input.required = true;
+      wrap.appendChild(input);
+
+      leadFieldsContainer.appendChild(wrap);
+    });
+
+    privacyPrefixSpan.textContent = leadSettings.privacyPrefixText || "";
+    privacyLinkAnchor.textContent = leadSettings.privacyLinkText || "privacy policy";
+    privacyLinkAnchor.href = leadSettings.privacyUrl || "#";
+  }
+
+  // Evita che il click sul link privacy (annidato nella <label>) spunti
+  // per errore la checkbox di consenso.
+  privacyLinkAnchor.addEventListener("click", (e)=>{ e.stopPropagation(); });
+
+  function applyLeadFlowVisibility(){
+    if(leadSettings.enabled){
+      gameShell.classList.add("hidden");
+      leadShell.classList.remove("hidden");
+    }else{
+      leadShell.classList.add("hidden");
+      gameShell.classList.remove("hidden");
+    }
+  }
+
+  async function submitLead(fields, consent){
+    const url = (leadSettings.appsScriptUrl || "").trim();
+    if(!url) return { ok: false, reason: "URL Apps Script lead non configurato" };
+    try{
+      const res = await fetch(url, {
+        method: "POST",
+        // text/plain evita il preflight CORS che Apps Script non gestisce
+        // correttamente con application/json.
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ fields: fields, consent: consent })
+      });
+      return { ok: res.ok, reason: res.ok ? "" : ("HTTP " + res.status) };
+    }catch(err){
+      return { ok: false, reason: err.message };
+    }
+  }
+
+  leadForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    leadErrorEl.textContent = "";
+
+    const fieldsData = {};
+    for(let i=0;i<leadFields.length;i++){
+      const f = leadFields[i];
+      const el = document.getElementById("leadInput_" + i);
+      const val = el ? el.value.trim() : "";
+      if(f.required && !val){
+        leadErrorEl.textContent = `Il campo "${f.label}" è obbligatorio.`;
+        if(el) el.focus();
+        return;
+      }
+      fieldsData[f.label] = val;
+    }
+
+    if(!privacyConsentInput.checked){
+      leadErrorEl.textContent = "Devi accettare l'informativa sulla privacy per continuare.";
+      return;
+    }
+
+    leadSubmitBtn.disabled = true;
+    leadSubmitBtn.textContent = "Invio…";
+
+    const result = await submitLead(fieldsData, true);
+    if(!result.ok){
+      console.warn("Invio lead non riuscito:", result.reason);
+      // Non blocchiamo comunque il gioco: i dati dell'ospite hanno
+      // priorità sull'esperienza, l'invio è "best effort".
+    }
+
+    leadSubmitBtn.disabled = false;
+    leadSubmitBtn.textContent = "🎡 Continua e gioca";
+    leadForm.reset();
+    leadShell.classList.add("hidden");
+    gameShell.classList.remove("hidden");
+  });
+
+  // --- Editor campi (pannello impostazioni) ---
+  function renderLeadFieldEditor(){
+    leadFieldList.innerHTML = "";
+    leadFields.forEach((f,i)=>{
+      const row = document.createElement("div");
+      row.className = "seg-row lead-field-row";
+      row.dataset.index = String(i);
+      row.innerHTML = `
+        <div class="seg-order">
+          <button type="button" class="seg-btn" data-action="up" title="Sposta su">▲</button>
+          <button type="button" class="seg-btn" data-action="down" title="Sposta giù">▼</button>
+        </div>
+        <input type="text" class="seg-label" data-field="label" value="${(f.label||'').replace(/"/g,'&quot;')}" placeholder="Nome campo" style="flex:1;">
+        <select class="lead-type-select" data-field="type">
+          <option value="text"${f.type==='text'?' selected':''}>Testo</option>
+          <option value="email"${f.type==='email'?' selected':''}>Email</option>
+          <option value="tel"${f.type==='tel'?' selected':''}>Telefono</option>
+          <option value="number"${f.type==='number'?' selected':''}>Numero</option>
+          <option value="textarea"${f.type==='textarea'?' selected':''}>Area di testo</option>
+        </select>
+        <label class="lead-required-label"><input type="checkbox" data-field="required" ${f.required?'checked':''}> Obbl.</label>
+        <button type="button" class="seg-btn danger" data-action="delete" title="Elimina campo">🗑️</button>
+      `;
+      leadFieldList.appendChild(row);
+    });
+  }
+
+  function handleLeadFieldChange(e){
+    const row = e.target.closest(".lead-field-row");
+    if(!row) return;
+    const idx = Number(row.dataset.index);
+    const field = e.target.dataset.field;
+    if(!field || !leadFields[idx]) return;
+
+    if(field === "label") leadFields[idx].label = e.target.value;
+    else if(field === "type") leadFields[idx].type = e.target.value;
+    else if(field === "required") leadFields[idx].required = e.target.checked;
+    else return;
+
+    renderLeadFields();
+    saveState();
+  }
+  leadFieldList.addEventListener("input", handleLeadFieldChange);
+  leadFieldList.addEventListener("change", handleLeadFieldChange);
+
+  leadFieldList.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button[data-action]");
+    if(!btn) return;
+    const row = btn.closest(".lead-field-row");
+    const idx = Number(row.dataset.index);
+    const action = btn.dataset.action;
+
+    if(action === "up" && idx > 0){
+      [leadFields[idx-1], leadFields[idx]] = [leadFields[idx], leadFields[idx-1]];
+      renderLeadFieldEditor(); renderLeadFields(); saveState();
+    }else if(action === "down" && idx < leadFields.length-1){
+      [leadFields[idx+1], leadFields[idx]] = [leadFields[idx], leadFields[idx+1]];
+      renderLeadFieldEditor(); renderLeadFields(); saveState();
+    }else if(action === "delete"){
+      if(leadFields.length <= 1){
+        alert("Deve esserci almeno un campo nel modulo.");
+        return;
+      }
+      leadFields.splice(idx,1);
+      renderLeadFieldEditor(); renderLeadFields(); saveState();
+    }
+  });
+
+  addLeadFieldBtn.addEventListener("click", ()=>{
+    leadFields.push({ label: "Nuovo campo", type: "text", required: false });
+    renderLeadFieldEditor();
+    renderLeadFields();
+    saveState();
+    leadFieldList.scrollTop = leadFieldList.scrollHeight;
+  });
+
+  leadEnabledToggle.addEventListener("change", ()=>{
+    leadSettings.enabled = leadEnabledToggle.checked;
+    saveState();
+  });
+  leadAppsScriptUrlInput.addEventListener("input", ()=>{
+    leadSettings.appsScriptUrl = leadAppsScriptUrlInput.value.trim();
+    saveState();
+  });
+  leadPrivacyUrlInput.addEventListener("input", ()=>{
+    leadSettings.privacyUrl = leadPrivacyUrlInput.value.trim();
+    renderLeadFields();
+    saveState();
+  });
+  leadPrivacyPrefixInput.addEventListener("input", ()=>{
+    leadSettings.privacyPrefixText = leadPrivacyPrefixInput.value;
+    renderLeadFields();
+    saveState();
+  });
+  leadPrivacyLinkTextInput.addEventListener("input", ()=>{
+    leadSettings.privacyLinkText = leadPrivacyLinkTextInput.value;
+    renderLeadFields();
+    saveState();
   });
 
   /* =========================================================
@@ -1168,7 +1641,10 @@
           icon: icon,
           image: String(s.image || "").trim(),
           color: /^#([0-9a-f]{3}){1,2}$/i.test(s.color) ? s.color : "#999999",
-          probability: Number(s.probability) >= 0 ? Number(s.probability) : 1
+          // "quantity" è il nuovo nome; accettiamo anche "probability" per
+          // compatibilità con fogli collegati prima di questo aggiornamento.
+          quantity: Number(s.quantity) >= 0 ? Number(s.quantity)
+                   : Number(s.probability) >= 0 ? Number(s.probability) : 1
         };
       }).filter(s => s.label);
 
@@ -1178,6 +1654,7 @@
       renderWheel();
       renderSegmentEditor();
       saveState();
+      updateSpinAvailability();
       setStatus(`✅ Impostazioni caricate (${cleaned.length} spicchi) alle ${new Date().toLocaleTimeString('it-IT')}.`, "ok");
     }catch(err){
       console.error(err);
@@ -1261,6 +1738,13 @@
     bgUrlInput.value = currentBgUrl || "";
     appsScriptInput.value = CONFIG.APPS_SCRIPT_URL || "";
     renderSegmentEditor();
+
+    leadEnabledToggle.checked = !!leadSettings.enabled;
+    leadAppsScriptUrlInput.value = leadSettings.appsScriptUrl || "";
+    leadPrivacyUrlInput.value = leadSettings.privacyUrl || "";
+    leadPrivacyPrefixInput.value = leadSettings.privacyPrefixText || "";
+    leadPrivacyLinkTextInput.value = leadSettings.privacyLinkText || "";
+    renderLeadFieldEditor();
   }
 
   function tryUnlock(){
@@ -1326,7 +1810,7 @@
   });
 
   resetAllBtn.addEventListener("click", ()=>{
-    if(!confirm("Ripristinare titolo, sottotitolo, logo, sfondo e spicchi ai valori predefiniti?")) return;
+    if(!confirm("Ripristinare titolo, sottotitolo, logo, sfondo, spicchi e impostazioni raccolta leads ai valori predefiniti?")) return;
     segments = DEFAULT_SEGMENTS.map(s => ({...s}));
     titleText.textContent = DEFAULT_TITLE;
     subtitleText.textContent = DEFAULT_SUBTITLE;
@@ -1338,6 +1822,19 @@
     subtitleInput.value = DEFAULT_SUBTITLE;
     logoUrlInput.value = "";
     bgUrlInput.value = "";
+
+    leadFields = DEFAULT_LEAD_FIELDS.map(f => ({...f}));
+    leadSettings = { ...DEFAULT_LEAD_SETTINGS };
+    leadEnabledToggle.checked = leadSettings.enabled;
+    leadAppsScriptUrlInput.value = "";
+    leadPrivacyUrlInput.value = "";
+    leadPrivacyPrefixInput.value = leadSettings.privacyPrefixText;
+    leadPrivacyLinkTextInput.value = leadSettings.privacyLinkText;
+    renderLeadFieldEditor();
+    renderLeadFields();
+    applyLeadFlowVisibility();
+    updateSpinAvailability();
+
     try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
     setStatus("Valori predefiniti ripristinati.", "info");
   });
@@ -1357,10 +1854,19 @@
     if(saved.subtitle) subtitleText.textContent = saved.subtitle;
     if(saved.logo) applyLogo(saved.logo);
     if(saved.background) applyBackground(saved.background);
+    if(Array.isArray(saved.leadFields) && saved.leadFields.length){
+      leadFields = saved.leadFields;
+    }
+    if(saved.leadSettings){
+      leadSettings = Object.assign({}, DEFAULT_LEAD_SETTINGS, saved.leadSettings);
+    }
   }
 
   createBulbs();
   renderWheel();
+  renderLeadFields();
+  applyLeadFlowVisibility();
+  updateSpinAvailability();
   if(CONFIG.APPS_SCRIPT_URL){
     loadSettings(CONFIG.APPS_SCRIPT_URL);
   }
