@@ -101,7 +101,7 @@
 
   .pointer{
     position:absolute;
-    top: 6px;
+    top: 16px;
     left:50%;
     transform: translateX(-50%);
     z-index: 5;
@@ -111,9 +111,9 @@
   .pointer svg{ display:block; }
   .pointer-knob{
     position:absolute;
-    top:-9px; left:50%;
+    top:-10px; left:50%;
     transform: translateX(-50%);
-    width:16px; height:16px;
+    width:18px; height:18px;
     border-radius:50%;
     background: var(--accent-gold);
     box-shadow: 0 0 10px 3px rgba(255,217,61,.8);
@@ -219,6 +219,30 @@
     transition: background .2s ease, transform .3s ease;
   }
   .icon-btn:hover{ background: rgba(255,255,255,.25); transform: rotate(35deg); }
+
+  /* Pulsante di aggiornamento dati dal foglio: discreto (non è
+     un'impostazione da proteggere con password, serve solo a
+     ri-scaricare i dati più recenti senza dover ricaricare la pagina). */
+  .refresh-btn{
+    position:absolute;
+    top:20px; right:64px;
+    width:30px; height:30px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.22);
+    background: rgba(255,255,255,.07);
+    color:#fff;
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    opacity:.38;
+    transition: opacity .2s ease, background .2s ease;
+    z-index: 6;
+  }
+  .refresh-btn:hover{ opacity:1; background: rgba(255,255,255,.2); }
+  .refresh-btn.spinning{ opacity:1; animation: refreshSpin .8s linear infinite; }
+  .refresh-btn.hidden{ display:none; }
+  @keyframes refreshSpin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
 
   .modal{
     position:fixed; inset:0;
@@ -552,6 +576,7 @@
 
   <div class="app-shell" id="gameShell">
     <button class="icon-btn" id="settingsBtn" title="Impostazioni">⚙️</button>
+    <button class="refresh-btn hidden" id="refreshDataBtn" title="Aggiorna dati dal foglio Google Sheet">↻</button>
 
     <h1 id="titleText">🎡 Ruota della Fortuna</h1>
     <p class="subtitle" id="subtitleText">Gira la ruota e vinci subito il tuo gadget!</p>
@@ -560,8 +585,8 @@
       <div class="bulbs" id="bulbs"></div>
       <div class="pointer">
         <div class="pointer-knob"></div>
-        <svg width="34" height="28" viewBox="0 0 34 28">
-          <polygon points="17,27 2,2 32,2" fill="#E53935" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
+        <svg width="42" height="36" viewBox="0 0 42 36">
+          <polygon points="21,34 3,3 39,3" fill="#E53935" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
         </svg>
       </div>
       <div class="rim"></div>
@@ -816,6 +841,7 @@
   const hubLogo         = document.getElementById("hubLogo");
 
   const settingsBtn    = document.getElementById("settingsBtn");
+  const refreshDataBtn = document.getElementById("refreshDataBtn");
   const settingsModal  = document.getElementById("settingsModal");
   const closeSettings  = document.getElementById("closeSettings");
 
@@ -1659,7 +1685,13 @@
     }
     setStatus("Caricamento impostazioni…", "info");
     try{
-      const res = await fetch(url, { method: "GET" });
+      // Cache-busting: alcuni browser (soprattutto su tablet/mobile)
+      // possono tenere in cache la risposta GET di Apps Script e
+      // mostrare dati vecchi anche dopo aver modificato il foglio.
+      // Aggiungendo un parametro sempre diverso e disattivando la cache
+      // ci assicuriamo di leggere sempre l'ultima versione del foglio.
+      const bustedUrl = url + (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+      const res = await fetch(bustedUrl, { method: "GET", cache: "no-store" });
       if(!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
       const list = Array.isArray(data && data.segments) ? data.segments
@@ -1843,6 +1875,20 @@
   closeSettings.addEventListener("click", ()=> settingsModal.classList.add("hidden"));
   settingsModal.addEventListener("click", (e)=>{ if(e.target === settingsModal) settingsModal.classList.add("hidden"); });
 
+  // Pulsante di aggiornamento dati: non richiede la password delle
+  // impostazioni (non modifica nulla, scarica solo l'ultima versione del
+  // foglio Google Sheet) — comodo per chi gestisce il gioco sul posto
+  // quando qualcosa è stato appena cambiato da remoto.
+  refreshDataBtn.addEventListener("click", async ()=>{
+    if(refreshDataBtn.classList.contains("spinning")) return;
+    refreshDataBtn.classList.add("spinning");
+    try{
+      await loadSettings(getActiveAppsScriptUrl());
+    } finally {
+      refreshDataBtn.classList.remove("spinning");
+    }
+  });
+
   loadSettingsBtn.addEventListener("click", ()=>{
     const url = appsScriptInput.value.trim() || CONFIG.APPS_SCRIPT_URL;
     loadSettings(url);
@@ -1923,6 +1969,7 @@
   applyLeadFlowVisibility();
   updateSpinAvailability();
   if(CONFIG.APPS_SCRIPT_URL){
+    refreshDataBtn.classList.remove("hidden");
     loadSettings(CONFIG.APPS_SCRIPT_URL);
   }
 
