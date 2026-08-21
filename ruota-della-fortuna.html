@@ -529,6 +529,14 @@
   }
   .win-overlay.show .win-card{ transform: scale(1) rotate(0deg); }
   .win-icon{ font-size: 76px; line-height:1; margin-bottom: 10px; filter: drop-shadow(0 8px 14px rgba(0,0,0,.4)); }
+  .win-image{
+    display:block;
+    width: 108px; height: 108px;
+    object-fit: contain;
+    margin: 0 auto 10px;
+    filter: drop-shadow(0 8px 14px rgba(0,0,0,.4));
+  }
+  .win-image.hidden{ display:none; }
   .win-title{ font-size: 26px; font-weight:800; letter-spacing:1px; margin-bottom:6px; color: var(--accent-gold); text-shadow: 0 2px 10px rgba(0,0,0,.5); }
   .win-prize{ font-size: 21px; font-weight:700; margin-bottom:10px; }
   .win-sub{ font-size: 13px; opacity:.85; }
@@ -741,6 +749,7 @@
   <!-- ===== Overlay vincita ===== -->
   <div class="win-overlay hidden" id="winOverlay">
     <div class="win-card">
+      <img class="win-image hidden" id="winImage" alt="">
       <div class="win-icon" id="winIcon">🎁</div>
       <div class="win-title">HAI VINTO!</div>
       <div class="win-prize" id="winPrizeLabel">Premio</div>
@@ -876,6 +885,7 @@
 
   const winOverlay     = document.getElementById("winOverlay");
   const winIcon        = document.getElementById("winIcon");
+  const winImage       = document.getElementById("winImage");
   const winPrizeLabel  = document.getElementById("winPrizeLabel");
 
   const confettiCanvas = document.getElementById("confettiCanvas");
@@ -1340,7 +1350,29 @@
   }
 
   function showWinOverlay(prize){
-    winIcon.textContent = prize.icon || "🎁";
+    // Priorità: se il premio ha un'immagine (dal foglio o inserita a
+    // mano), mostriamo quella nel pop-up di vincita — coerente con lo
+    // spicchio sulla ruota. Altrimenti l'emoji dell'icona, e solo se
+    // manca anche quella il 🎁 generico (qui, a differenza dello
+    // spicchio, teniamo comunque un disegno: un pop-up di vincita
+    // completamente vuoto sopra "HAI VINTO!" sembrerebbe un errore).
+    const imageUrl = (prize.image || "").trim();
+    if(imageUrl){
+      winImage.src = imageUrl;
+      winImage.onerror = () => {
+        // URL non raggiungibile: torniamo all'icona invece di lasciare
+        // un'immagine rotta in bella vista.
+        winImage.classList.add("hidden");
+        winIcon.classList.remove("hidden");
+        winIcon.textContent = prize.icon || "🎁";
+      };
+      winImage.classList.remove("hidden");
+      winIcon.classList.add("hidden");
+    }else{
+      winImage.classList.add("hidden");
+      winIcon.classList.remove("hidden");
+      winIcon.textContent = prize.icon || "🎁";
+    }
     winPrizeLabel.textContent = prize.label;
     spinBtn.classList.add("hidden");
 
