@@ -1702,7 +1702,14 @@
       }
       const cleaned = list.map(s => {
         const label = String(s.label || s.id || "Premio").trim();
-        const icon = String(s.icon || "").trim() || guessIcon(label);
+        // Rispettiamo esattamente la colonna "Icona" del foglio: se la
+        // lasci vuota (magari perché usi un'Immagine, o perché non la
+        // vuoi proprio), lo spicchio non deve "indovinarla" da solo —
+        // altrimenti cancellarla dal foglio non avrebbe alcun effetto
+        // visibile sulla ruota. Se resta vuota e non c'è nemmeno
+        // un'Immagine, il disegno dello spicchio mostra semplicemente il
+        // 🎁 generico (vedi renderWheel).
+        const icon = String(s.icon || "").trim();
         return {
           label: label,
           icon: icon,
