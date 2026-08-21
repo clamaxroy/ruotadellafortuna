@@ -658,8 +658,9 @@
         <hr class="sep">
 
         <div class="field-group">
-          <label for="appsScriptUrl">URL Web App di Google Apps Script (opzionale)</label>
+          <label for="appsScriptUrl">URL Web App di Google Apps Script (gestione remota)</label>
           <input type="url" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+          <p class="hint">Se impostato, ad ogni apertura della pagina premi, quantità, titolo, sottotitolo, logo e sfondo si aggiornano da soli dal foglio Google Sheet — e ogni vincita scala la quantità direttamente sul foglio.</p>
           <div class="btn-row">
             <button class="btn-sm primary" id="loadSettingsBtn">Carica da Google Sheet</button>
           </div>
@@ -735,7 +736,14 @@
      al volo dal pannello ⚙️ Impostazioni (password: 2006).
   ========================================================= */
   const CONFIG = {
-    APPS_SCRIPT_URL: "" // es: "https://script.google.com/macros/s/AKfycb.../exec"
+    // URL Web App di Google Apps Script collegato al foglio remoto dei
+    // premi. Con questo valore impostato, ad ogni apertura della pagina
+    // la ruota scarica in automatico da Google Sheet: premi, quantità,
+    // titolo, sottotitolo, logo e sfondo. Ogni vincita aggiorna anche la
+    // quantità rimasta direttamente sul foglio: chi gestisce l'evento
+    // sul posto deve solo giocare, tutto il resto si gestisce da remoto
+    // modificando il foglio Google Sheet.
+    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwnJVyzbzQkB_7zrgePtpJuwClmkG3fkPhEEjfN8WF6U2e4fIep3rHbtd0TMYQD7qAa/exec"
   };
 
   const SETTINGS_PASSWORD = "2006";
@@ -1257,6 +1265,32 @@
   }
 
   let winTimer = null;
+  // URL Apps Script attivo: quello scritto al volo nelle impostazioni ha
+  // priorità, altrimenti quello fisso in CONFIG.
+  function getActiveAppsScriptUrl(){
+    const fromInput = appsScriptInput && appsScriptInput.value ? appsScriptInput.value.trim() : "";
+    return fromInput || CONFIG.APPS_SCRIPT_URL || "";
+  }
+
+  // Comunica la vincita al foglio Google Sheet remoto, scalando di 1 la
+  // quantità nella riga corrispondente (colonna "Quantita"). È una chiamata
+  // "fire-and-forget": se fallisce (rete assente, foglio non raggiungibile)
+  // il gioco continua comunque a funzionare con la quantità già scalata in
+  // locale — al prossimo caricamento riuscito la pagina si riallinea da sola
+  // al foglio, che resta sempre la fonte di verità delle scorte.
+  function postWinToSheet(prize){
+    if(!prize || !prize.row) return; // premio non collegato a una riga del foglio: niente da sincronizzare
+    const url = getActiveAppsScriptUrl();
+    if(!url) return;
+    try{
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, // evita il preflight CORS su Apps Script
+        body: JSON.stringify({ action: "win", row: prize.row, label: prize.label })
+      }).catch(err => console.warn("Sincronizzazione vincita non riuscita:", err));
+    }catch(err){ console.warn("Sincronizzazione vincita non riuscita:", err); }
+  }
+
   function finishSpin(index){
     spinning = false;
     const prize = segments[index];
@@ -1268,6 +1302,7 @@
       prize.quantity = Math.max(0, (Number(prize.quantity) || 0) - 1);
       saveState();
       renderSegmentEditor();
+      postWinToSheet(prize);
     }
 
     launchConfetti();
@@ -1644,7 +1679,10 @@
           // "quantity" è il nuovo nome; accettiamo anche "probability" per
           // compatibilità con fogli collegati prima di questo aggiornamento.
           quantity: Number(s.quantity) >= 0 ? Number(s.quantity)
-                   : Number(s.probability) >= 0 ? Number(s.probability) : 1
+                   : Number(s.probability) >= 0 ? Number(s.probability) : 1,
+          // Numero di riga nel foglio Google Sheet (se presente): serve per
+          // scalare la quantità direttamente sul foglio ad ogni vincita.
+          row: Number(s.row) > 0 ? Number(s.row) : null
         };
       }).filter(s => s.label);
 
@@ -1653,6 +1691,23 @@
       segments = cleaned;
       renderWheel();
       renderSegmentEditor();
+
+      // Titolo / sottotitolo / logo / sfondo: se il foglio remoto include
+      // una scheda "Config", applichiamo anche questi valori così tutto —
+      // non solo i premi — si gestisce da Google Sheet.
+      const cfg = (data && typeof data.config === "object" && data.config) || {};
+      const cfgTitle = String(cfg.title || cfg.titolo || "").trim();
+      const cfgSubtitle = String(cfg.subtitle || cfg.sottotitolo || "").trim();
+      const cfgLogo = String(cfg.logo || "").trim();
+      const cfgBackground = String(cfg.background || cfg.sfondo || "").trim();
+
+      if(cfgTitle){ titleText.textContent = cfgTitle; titleInput.value = cfgTitle; }
+      if(cfgSubtitle){ subtitleText.textContent = cfgSubtitle; subtitleInput.value = cfgSubtitle; }
+      if(cfgLogo){ applyLogo(cfgLogo); logoUrlInput.value = cfgLogo; }
+      else if(cfg.hasOwnProperty && (cfg.hasOwnProperty("logo"))){ removeLogo(); logoUrlInput.value = ""; }
+      if(cfgBackground){ applyBackground(cfgBackground); bgUrlInput.value = cfgBackground; }
+      else if(cfg.hasOwnProperty && (cfg.hasOwnProperty("background") || cfg.hasOwnProperty("sfondo"))){ removeBackground(); bgUrlInput.value = ""; }
+
       saveState();
       updateSpinAvailability();
       setStatus(`✅ Impostazioni caricate (${cleaned.length} spicchi) alle ${new Date().toLocaleTimeString('it-IT')}.`, "ok");
