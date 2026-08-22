@@ -128,12 +128,13 @@
 
   .pointer{
     /* Dimensione e posizione in percentuale della ruota (non più in px
-       fissi): così la punta resta sempre appoggiata sul bordo della
-       ruota, sia quando la ruota è piccola (telefono) sia quando è
-       grande (monitor), invece di "staccarsi" dal bordo quando la
-       ruota cresce. */
+       fissi): così la punta resta sempre ben dentro il bordo della
+       ruota, di quanto sia piccola (telefono) o grande (monitor),
+       invece di "staccarsi" dal bordo quando la ruota cresce.
+       "top" più alto = punta spinta più in basso, oltre il bordo
+       esterno dello spicchio, in proporzione a ogni dimensione. */
     position:absolute;
-    top: 1%;
+    top: 3%;
     left:50%;
     width: 10%;
     transform: translateX(-50%);
@@ -144,7 +145,7 @@
   .pointer svg{ display:block; width:100%; height:auto; }
   .pointer-knob{
     position:absolute;
-    top: 0.3%; left:50%;
+    top: 2.3%; left:50%;
     transform: translate(-50%,-50%);
     width: 4.5%;
     aspect-ratio: 1 / 1;
