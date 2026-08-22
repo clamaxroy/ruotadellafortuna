@@ -12,17 +12,24 @@
     --accent-gold: #FFD93D;
     --shadow-deep: 0 20px 50px rgba(0,0,0,0.45);
 
-    /* Diametro della ruota: si adatta in modo continuo alla larghezza
-       reale dello schermo che la mostra (smartphone, iPad, PC, monitor
-       grandi), invece di avere poche taglie fisse. Cresce con la
-       larghezza della finestra (78vw) fino a un massimo pensato per
-       restare ben leggibile anche su un monitor da 32" (~27cm fisici,
-       nel riferimento standard di 96px = 1 pollice usato dai browser),
-       senza mai scendere sotto una dimensione minima usabile su un
-       telefono piccolo. Ogni altro elemento (card, titolo, pulsante)
-       si scala di conseguenza in proporzione, così l'insieme resta
-       coerente a qualunque dimensione. */
-    --wheel-d: clamp(220px, 78vw, 27cm);
+    /* Diametro della ruota: si adatta in modo continuo sia alla LARGHEZZA
+       sia all'ALTEZZA reali dello schermo che la mostra (smartphone,
+       iPad, PC, monitor grandi), invece di considerare solo la
+       larghezza. Il valore preferito è il più piccolo tra:
+         - 78vw (cresce con la larghezza della finestra)
+         - 100vh meno lo spazio verticale occupato da titolo, sottotitolo,
+           pulsante e margini della card (~390px, misurato) — così su
+           schermi larghi ma "bassi" (es. laptop in orizzontale con poca
+           altezza, o finestre non massimizzate) la ruota non sfora mai
+           oltre il bordo inferiore/superiore dello schermo.
+       Il risultato è comunque limitato tra una dimensione minima
+       usabile su telefono e un massimo pensato per restare ben
+       leggibile anche su un monitor da 32" (~27cm fisici, nel
+       riferimento standard di 96px = 1 pollice usato dai browser).
+       Ogni altro elemento (card, titolo, pulsante) si scala di
+       conseguenza in proporzione, così l'insieme resta coerente e
+       sempre interamente visibile a qualunque dimensione. */
+    --wheel-d: clamp(220px, min(78vw, calc(100vh - 390px)), 27cm);
   }
 
   *{ box-sizing: border-box; }
@@ -120,20 +127,27 @@
   }
 
   .pointer{
+    /* Dimensione e posizione in percentuale della ruota (non più in px
+       fissi): così la punta resta sempre appoggiata sul bordo della
+       ruota, sia quando la ruota è piccola (telefono) sia quando è
+       grande (monitor), invece di "staccarsi" dal bordo quando la
+       ruota cresce. */
     position:absolute;
-    top: 16px;
+    top: 1%;
     left:50%;
+    width: 10%;
     transform: translateX(-50%);
     z-index: 5;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,.5));
     line-height:0;
   }
-  .pointer svg{ display:block; }
+  .pointer svg{ display:block; width:100%; height:auto; }
   .pointer-knob{
     position:absolute;
-    top:-10px; left:50%;
-    transform: translateX(-50%);
-    width:18px; height:18px;
+    top: 0.3%; left:50%;
+    transform: translate(-50%,-50%);
+    width: 4.5%;
+    aspect-ratio: 1 / 1;
     border-radius:50%;
     background: var(--accent-gold);
     box-shadow: 0 0 10px 3px rgba(255,217,61,.8);
@@ -611,9 +625,9 @@
 
     <div class="wheel-outer" id="wheelOuter">
       <div class="bulbs" id="bulbs"></div>
+      <div class="pointer-knob"></div>
       <div class="pointer">
-        <div class="pointer-knob"></div>
-        <svg width="42" height="36" viewBox="0 0 42 36">
+        <svg viewBox="0 0 42 36">
           <polygon points="21,34 3,3 39,3" fill="#E53935" stroke="#111111" stroke-width="3" stroke-linejoin="round"/>
         </svg>
       </div>
